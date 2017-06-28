@@ -58,6 +58,12 @@ namespace Interp2D
         {
 
         }
+
+        protected override bool ProcessKeyPreview(ref Message m)
+        {
+            modelingControl.ProcessKeyMessage(ref m);
+            return base.ProcessKeyPreview(ref m);
+        }
     }
 
     interface ICommand

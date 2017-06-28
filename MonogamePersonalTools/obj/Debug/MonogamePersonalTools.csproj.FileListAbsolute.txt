@@ -23,3 +23,23 @@ C:\Users\Vexza_000\Documents\Visual Studio 2015\Projects\MonogamePersonalTools\b
 C:\Users\Vexza_000\Documents\Visual Studio 2015\Projects\MonogamePersonalTools\obj\Debug\MonogamePersonalTools.csprojResolveAssemblyReference.cache
 C:\Users\Vexza_000\Documents\Visual Studio 2015\Projects\MonogamePersonalTools\obj\Debug\MonogamePersonalTools.dll
 C:\Users\Vexza_000\Documents\Visual Studio 2015\Projects\MonogamePersonalTools\obj\Debug\MonogamePersonalTools.pdb
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\MonogamePersonalTools.dll
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\MonogamePersonalTools.pdb
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\MonoGame.Framework.dll
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.XAudio2.dll
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.dll
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.DXGI.dll
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.Direct3D11.dll
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.Direct2D1.dll
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.XInput.dll
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.MediaFoundation.dll
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\MonoGame.Framework.xml
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.XAudio2.xml
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.xml
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.DXGI.xml
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.Direct3D11.xml
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.Direct2D1.xml
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.XInput.xml
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\bin\Debug\SharpDX.MediaFoundation.xml
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\obj\Debug\MonogamePersonalTools.dll
+C:\Users\Vivian Lancaster\Documents\Visual Studio 2015\Projects\Live2DReplacementForm\MonogamePersonalTools\obj\Debug\MonogamePersonalTools.pdb

@@ -52,6 +52,7 @@
             this.redoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             //
             this.spinningTriangleControl = new Interp2D.SpinningTriangleControl();
+            this.modelingControl = new ModelingControl();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
@@ -90,7 +91,7 @@
             this.modelingPage.Controls.Add(this.vertexColor3);
             this.modelingPage.Controls.Add(this.vertexColor2);
             this.modelingPage.Controls.Add(this.vertexColor1);
-            this.modelingPage.Controls.Add(this.spinningTriangleControl);
+            this.modelingPage.Controls.Add(this.modelingControl);
             this.modelingPage.Location = new System.Drawing.Point(4, 22);
             this.modelingPage.Name = "modelingPage";
             this.modelingPage.Padding = new System.Windows.Forms.Padding(3);
@@ -240,6 +241,14 @@
             this.spinningTriangleControl.Size = new System.Drawing.Size(602, 444);
             this.spinningTriangleControl.TabIndex = 0;
             this.spinningTriangleControl.Text = "spinningTriangleControl";
+            ///
+            // modelingControl
+            //
+            this.modelingControl.Location = new System.Drawing.Point(3, 3);
+            this.modelingControl.Name = modelingControl.CurrentLayer;
+            this.modelingControl.Size = new System.Drawing.Size(1024, 1024);
+            this.spinningTriangleControl.TabIndex = 0;
+
             // 
             // Form1
             // 
@@ -276,6 +285,7 @@
         private System.Windows.Forms.ListBox layerList;
        // private SpriteFontControl spriteFontControl;
         private SpinningTriangleControl spinningTriangleControl;
+        private ModelingControl modelingControl;
         private System.Windows.Forms.ComboBox vertexColor1;
         private System.Windows.Forms.ComboBox vertexColor2;
         private System.Windows.Forms.ComboBox vertexColor3;

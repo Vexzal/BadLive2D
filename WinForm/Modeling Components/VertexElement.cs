@@ -40,6 +40,7 @@ namespace Interp2D
         static int lineCount; //all lines that need to start with this line. 
 
         short iD;
+        
 
 
         bool disposable = false;
@@ -198,7 +199,7 @@ namespace Interp2D
             }
             return outVal;               
         }
-        public BoundingSphere getBoundingSPhere()
+        public BoundingSphere getBoundingSphere()
         {
             return new BoundingSphere(Position, 16f);
         }

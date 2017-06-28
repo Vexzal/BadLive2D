@@ -23,7 +23,7 @@ namespace Interp2D
 
         BasicEffect effect;
         Stopwatch timer;
-        Button stateFlipButton;  
+        
 
         public readonly VertexPositionColor[] Verticies =
         {

@@ -4,15 +4,45 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Input;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.PersonalTools;
 
 namespace Interp2D
 {
+    public enum ModelingCommands
+    {
+        SelectOne,
+        SelectGroup,
+        Move,
+        Add    
+    }
+
     class ModelingControl : GameControl
     {
+        CommandManager commands;
+
+        ModelingCommands activeCommand;
+
+        MouseState oldMState;
+        MouseState newMState;
+
+        KeyboardState oldKState;
+        KeyboardState newKState;
+
+        System.Drawing.Point oldPoint;
+        System.Drawing.Point newPoint;
+
         
+
+        int oldHeight;
+        int newHeight;
+
+        int oldWidth;
+        int newWidth;
+
         BasicEffect modelingEffect;
         BasicEffect lineEffect;
 
@@ -25,31 +55,37 @@ namespace Interp2D
         Texture2D vertTexture;
 
         Matrix scaleToScreen;
-        Matrix userScale;
-        Matrix userTranslation;
 
         Matrix World;
         Matrix View;
         Matrix Projection;
 
-        ModelContainer ActiveContainer; 
+        ModelContainer ActiveContainer;
 
-        VertexPositionColor[] vertexIndex;                       
+        VertexPositionColor[] vertPreview;
+        short[] linePreview;
+        VertexPositionColor[] vertexIndex;
         short[] lineIndex;
         short[] trisIndex;
-      
 
-        bool moving;
+
+        bool moving = false;
+        Vector3 MoveVector = Vector3.Zero;
 
         string currentLayer;
 
         Dictionary<short, int> indicies = new Dictionary<short, int>();
-        
-        
+
+
 
         protected override void Initialize()
         {
+
             base.Initialize();
+
+            lineEffect = new BasicEffect(GraphicsDevice);
+            lineEffect.VertexColorEnabled = true;
+            
 
             modelingEffect = new BasicEffect(GraphicsDevice);
             Vector2[] CursorPositions = ProcGenTexTools.PositionArray(8, 8);
@@ -59,13 +95,13 @@ namespace Interp2D
                 Vector2 midpoint = new Vector2(4, 4);
                 double pointDistance = ProcGenTexTools.calcDistance(CursorPositions[pixel], midpoint);
                 if (pointDistance <= (int)(4))
-                     return Color.DarkGray;
+                    return Color.DarkGray;
                 else { return Color.Transparent; }
             });
             backGroundTexture = ProcGenTexTools.CreateTexture(GraphicsDevice, 1024, 1024, pixel => Color.Transparent);
 
             modelingEffect.VertexColorEnabled = true;
-            
+
             vertexIndex = new VertexPositionColor[0];
             lineIndex = new short[0];
             trisIndex = new short[0];
@@ -76,13 +112,13 @@ namespace Interp2D
 
             ActiveContainer.PopulateDataChange += new EventHandler<EventArgs>(modeling_Populate);
         }
-        //properties 
+        #region properties
         public string CurrentLayer
         {
             get { return currentLayer; }
             set { currentLayer = value; }
         }
-
+        #endregion 
         public void initBackModel()
         {
             VertexPositionTexture v1 = new VertexPositionTexture(new Vector3(0, 0, 0), new Vector2(0, 0));
@@ -129,27 +165,176 @@ namespace Interp2D
          * **/
 
         //commands
-       
 
-        
+        private Vector2 MouseToVert(Vector2 Mouse)
+        {
+            return Vector2.Transform(Mouse, scaleToScreen);
+        }
+        private Vector2 VertToControl(Vector2 VertPos)
+        {
+            return Vector2.Transform(VertPos, Matrix.Invert(scaleToScreen));            
+        }
+        private void UpdatePreview(Vector2 mousePoint)
+        {
+            VertexPositionColor vert1 = new VertexPositionColor(new Vector3(mousePoint, 0), Color.Gray);
+            VertexPositionColor vert2;
+            VertexPositionColor vert3;
+            if(ActiveContainer.EditSelectGroup[0] == -1)
+            {
+                vert2 = vert1;
+                vert3 = vert1;
+
+                vertPreview = new VertexPositionColor[3] { vert1, vert2, vert3 };
+                linePreview = new short[2] { 0, 0 };
+            }
+            else
+            {
+                if(ActiveContainer.EditSelectGroup.Length >=2)
+                {
+                    vert2 = new VertexPositionColor(ActiveContainer.Verticies[ActiveContainer.EditSelectGroup[ActiveContainer.EditSelectGroup.Length - 1]].Position, Color.Gray);
+                    vert3 = new VertexPositionColor(ActiveContainer.Verticies[ActiveContainer.EditSelectGroup[ActiveContainer.EditSelectGroup.Length - 2]].Position, Color.Gray);
+                    
+                    vertPreview = new VertexPositionColor[3] { vert1, vert2, vert3};
+                    linePreview = new short[4] { 0, 1, 0, 2 };
+                }
+                else
+                {
+                    vert2 = new VertexPositionColor(ActiveContainer.Verticies[ActiveContainer.EditSelectGroup[ActiveContainer.EditSelectGroup.Length - 1]].Position, Color.Gray);
+                    vert3 = vert2;
+                    vertPreview = new VertexPositionColor[3] { vert1, vert2, vert3 };
+
+                    linePreview = new short[2] { 0, 1 };
+
+                }
+            }
+        }
+
         protected override void Update(GameTime gameTime)
         {
+            oldPoint = newPoint;
+            oldWidth = newWidth;
+            oldHeight = newHeight;
+            oldMState = newMState;
+            oldKState = newKState;
+
+            newPoint = MousePosition;
+            newWidth = this.Size.Width;
+            newHeight = this.Size.Height;
+            newMState = Mouse.GetState();
+            newKState = ControlKeyboard.GetState();
+
+            if(oldHeight != newHeight || oldWidth != newWidth)
+            {
+                scaleToScreen = Matrix.CreateScale(1 / newWidth);
+            }
+
+            UpdatePreview(MouseToVert(newMState.Position.ToVector2()));
+           
+            if (oldPoint != newPoint)
+            {
+                activeCommand = ModelingCommands.Add;
+                foreach (VertexInfo vert in ActiveContainer.Verticies)
+                {
+                    if (vert.getBoundingSphere().Contains(new Vector3(MouseToVert(new Vector2(newPoint.X, newPoint.Y)), 0)) == ContainmentType.Contains)
+                    {
+                        
+                        if(ActiveContainer.Selected(vert.ID))
+                        {
+                            activeCommand = ModelingCommands.Move;
+                            Cursor.Current = Cursors.Cross;
+                        }
+                        else { activeCommand = ModelingCommands.SelectOne;
+                            Cursor.Current = Cursors.Default;
+                        }
+                    }
+                    else { activeCommand = ModelingCommands.Add; Cursor.Current = Cursors.Default; }
+                }
+            }
+            if(newKState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftShift))
+            {
+                activeCommand = ModelingCommands.SelectGroup;
+            }
             
+
+            if(newMState.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed && oldMState.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Released)
+            {
+                switch(activeCommand)
+                {
+                    case ModelingCommands.Add:
+                        commands.ExecuteCommand(new AddVertCommand(ActiveContainer, ActiveContainer.Selection(newMState.Position.ToVector2()), newMState.Position.ToVector2()));
+                        ActiveContainer.CallPopulate();
+                        break;
+                    case ModelingCommands.SelectOne:
+                        commands.ExecuteCommand(new ModelingSelectSingleCommand(ActiveContainer, ActiveContainer.Selection(newMState.Position.ToVector2())));
+
+                        break;
+                    case ModelingCommands.SelectGroup:
+                        commands.ExecuteCommand(new ModelingSelectGroupCommand(ActiveContainer, ActiveContainer.Selection(newMState.Position.ToVector2())));
+                        break;
+                    case ModelingCommands.Move:
+                        moving = true;
+                        break;                   
+                }
+            } 
+            if(newMState.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed && oldMState.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
+            {
+                if(moving)
+                {
+                    MoveVector += new Vector3((newMState.Position - oldMState.Position).ToVector2(), 0);
+                    foreach (int i in ActiveContainer.EditSelectGroup)
+                    {
+                        vertexIndex[i].Position += Vector3.Transform(MoveVector, scaleToScreen);
+                    }
+                }
+            }
+            if(newMState.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Released && oldMState.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
+            {
+                if(moving )
+                {
+                    moving = false;
+                    if (MoveVector != Vector3.Zero)
+                    {
+                        commands.ExecuteCommand(new ModelingMoveCommand(ActiveContainer, MoveVector));
+                        ActiveContainer.CallPopulate();
+                        MoveVector = Vector3.Zero;
+                    }
+                }
+            }
         }
+
 
         protected override void Draw(GameTime gameTime)
         {
+            GraphicsDevice.Clear(Color.Beige);
             foreach(ModelMesh mesh in backGroundModel.Meshes)
             {
                 foreach(BasicEffect effect in mesh.Effects)
                 {
-                    effect.World = World * scaleToScreen * userScale * userTranslation;
+                    effect.World = World * Matrix.Invert(scaleToScreen);
                     effect.View = View;
                     effect.Projection = Projection;
                     effect.Texture = backGroundTexture;
                     effect.TextureEnabled = true;
                 }
                 mesh.Draw();
+            }
+            lineEffect.World = World * Matrix.Invert(scaleToScreen);
+            lineEffect.View = View;
+            lineEffect.Projection = Projection;
+            foreach(EffectPass pass in lineEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+            }
+            if(linePreview.Length > 0)
+            {
+                GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionColor>(
+                    PrimitiveType.LineList,
+                    vertPreview,
+                    0,
+                    vertPreview.Length,
+                    linePreview,
+                    0,
+                    linePreview.Length / 2);
             }
             if(lineIndex.Length > 0)
             {
@@ -175,9 +360,11 @@ namespace Interp2D
         {
             vertexIndex = ActiveContainer.PopulatePoints<VertexPositionColor>();
             lineIndex = ActiveContainer.populateLines();
-            trisIndex = ActiveContainer.populateTris();
-
+            trisIndex = ActiveContainer.populateTris();          
         } 
+      
+        
+       
     }
 
     class ModelContainer
@@ -287,6 +474,21 @@ namespace Interp2D
         }
         #endregion
 
+        #region externalMethods
+        public int Selection(Vector2 loc)
+        {
+            foreach(VertexInfo vert in verticies)
+            {
+                if(vert.getBoundingSphere().Contains(new Vector3(loc, 0)) == ContainmentType.Contains)
+                {
+                    return indicies[vert.ID];
+                }
+            }
+            return -1;
+        }
+        #endregion
+
+
         #region internalMethods
 
         #region generalInternal
@@ -313,6 +515,17 @@ namespace Interp2D
 
 
             return dxc * dyl - dyc * dxl;
+        }
+        public bool Selected(short ID)
+        {
+            for(int i = 0;i<editSelectGroup.Length;i++)
+            {
+                if(editSelectGroup[i] == indicies[ID])
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         #endregion
@@ -425,7 +638,7 @@ namespace Interp2D
                 buffIndex[iteration * 2 + 1] = (short)indicies[lines[iteration].second];
             }
             return buffIndex;
-        }        
+        }    
         public short[] populateTris()
         {
             short[] buffIndex = new short[tris.Length * 3];
@@ -528,7 +741,8 @@ namespace Interp2D
 
         public ModelingSelectSingleCommand(ModelContainer container, int select )
         {
-
+            _x = container;
+            Selected = select;
         }
 
         public void Execute()
@@ -541,28 +755,66 @@ namespace Interp2D
         }
         public void UnExecute()
         {
-
+            _x.Verticies = previousInfo;
+            _x.EditSelectGroup = oldSelectGroup;
         }
     }
     class ModelingSelectGroupCommand : ICommand
     {
         ModelContainer x;
         int Selected;
-        int editSelectVert;
+
+        int[] oldSelection;
+        VertexInfo[] oldInfo;
+
+        public ModelingSelectGroupCommand(ModelContainer container, int selected)
+        {
+            x = container;
+            Selected = selected;
+
+            oldSelection = container.EditSelectGroup;
+            oldInfo = container.Verticies;
+        }
         public void Execute()
         {
             for(int i = 0;i<x.EditSelectGroup.Length; i++)
             {
                 if(x.EditSelectGroup[i] == Selected)
                 {
-                    editSelectVert = Selected;
+                    // editSelectVert = Selected;
+                    x.RemoveArray(ModelingArrays.EditGroup, i);
                     return;
                 }
             }
+            x.ExpandArray(ModelingArrays.EditGroup);
+            x.EditSelectGroup[x.EditSelectGroup.Length - 1] = Selected;
+            x.Verticies[Selected].Color4 = Color.Orange;
         }
         public void UnExecute()
         {
+            x.EditSelectGroup = oldSelection;
+            x.Verticies = oldInfo;
+        }
+    }
+    class ModelingDeselectCommand : ICommand
+    {
+        ModelContainer x;
 
+        int[] oldSelection;
+
+        public ModelingDeselectCommand(ModelContainer container)
+        {
+            x = container;
+            oldSelection = container.EditSelectGroup;
+        }
+        public void Execute()
+        {
+            x.initSelectGroup();
+            x.EditSelectGroup[0] = -1;
+        }
+        public void UnExecute()
+        {
+            x.EditSelectGroup = oldSelection;
         }
     }
     class ModelingMoveCommand : ICommand
@@ -592,80 +844,95 @@ namespace Interp2D
             }
             _container.CallPopulate();
         }
-    }
-    class AddDisconnectedVert : ICommand
-    {
-        ModelContainer _container;
-        Vector3 Position;
-        short[] oldAvailableID;
-        
-        public AddDisconnectedVert(ModelContainer container, Vector3 position)
-        {
-            _container = container;
-            oldAvailableID = _container.AvailableID;   
-            Position = position;
-        }
-
-        public void Execute()
-        {
-            _container.ExpandArray(ModelingArrays.VertexInfo);
-            _container.Verticies[_container.Verticies.Length - 1] = new VertexInfo(_container.AvailableID[0]);
-            _container.Verticies[_container.Verticies.Length - 1].Position = Position;
-            _container.Verticies[_container.Verticies.Length - 1].Color4 = Color.Orange;
-            _container.Verticies[_container.Verticies.Length - 1].TextureCoord =new Vector2(Position.X, Position.Y);
-            _container.AvailableID[0] = (short)_container.Verticies.Length;
-            if(_container.AvailableID.Length>1)
-            {
-                _container.RemoveArray(ModelingArrays.AvailableID, 0);
-            }
-            _container.EditSelectGroup[0] = _container.Verticies.Length - 1;
-            _container.CallPopulate();
-            _container.SelectState = true;
-
-        }
-        public void UnExecute()
-        {
-            _container.RemoveArray(ModelingArrays.VertexInfo, _container.Verticies.Length - 1);
-            _container.AvailableID = oldAvailableID;                
-            _container.EditSelectGroup[0] = -1;
-            _container.SelectState = false;
-            _container.CallPopulate();
-        }
-    }
-    class AddConnectedVert : ICommand
+    }   
+    class AddVertCommand : ICommand
     {
         ModelContainer x;
-        Vector3 Position;
+        int access;        
+        Vector2 loc;
 
+        #region oldValues
+        VertexInfo[] oldInfo;
+        int[] oldSelect;
+        short[] oldID;
+        Lines[] oldLines;
+        Tris[] oldTris;
+        #endregion
 
+        public AddVertCommand(ModelContainer container, int Access, Vector2 Location)
+        {
+            x = container;
+            access = Access;
+            loc = Location;
 
+            oldInfo = container.Verticies;
+            oldLines = container.Lines;
+            oldTris = container.Tris;
+            oldSelect = container.EditSelectGroup;
+            oldID = container.AvailableID;
+
+        }
         public void Execute()
         {
-            
-            x.cleanColor(Color.White);
-            x.ExpandArray(ModelingArrays.VertexInfo);
-            x.Verticies[x.Verticies.Length - 1] = new VertexInfo(x.AvailableID[0]);
-            x.Verticies[x.Verticies.Length - 1].Position = Position;
-            x.Verticies[x.Verticies.Length - 1].Color4 = Color.Orange;
-            x.Verticies[x.Verticies.Length - 1].TextureCoord = new Vector2(Position.X, Position.Y);
-            
+            if(x.EditSelectGroup[0] != -1)
+            {
+                if(access < 0)
+                {
+                    x.cleanColor(Color.White);
+                    x.ExpandArray(ModelingArrays.VertexInfo);
+                    x.Verticies[x.Verticies.Length - 1] = new VertexInfo(x.AvailableID[0]);
+                    x.Verticies[x.Verticies.Length - 1].Position = new Vector3(loc, 0);
+                    x.Verticies[x.Verticies.Length - 1].TextureCoord = loc;
+                    x.Verticies[x.Verticies.Length - 1].Color4 = Color.Orange;
 
+                    x.AvailableID[0] = (short)x.Verticies.Length;
+                    if(x.AvailableID.Length >1)
+                    {
+                        x.RemoveArray(ModelingArrays.AvailableID, 0);
+                    }
+                    //editLineEnd = x.Verticies.Length - 1;
+                    x.initLine(x.Verticies[x.EditSelectGroup[x.EditSelectGroup.Length - 1]], x.Verticies[x.Verticies.Length - 1]);
+                    x.initSelectGroup();
+                    x.EditSelectGroup[0] = x.Verticies.Length - 1;
+                }
+                else
+                {
+                    x.cleanColor(Color.White);
+
+                    x.Verticies[access].Color4 = Color.Orange;
+                    x.initLine(x.Verticies[x.EditSelectGroup[x.EditSelectGroup.Length - 1]], x.Verticies[access]);
+                    x.initTris(x.Verticies[x.EditSelectGroup[x.EditSelectGroup.Length - 1]], x.Verticies[access]);
+                    x.EditSelectGroup[0] = access;
+                }
+
+
+            }
+            else
+            {
+                x.ExpandArray(ModelingArrays.VertexInfo);
+                x.Verticies[x.Verticies.Length - 1] = new VertexInfo(x.AvailableID[0]);
+                x.Verticies[x.Verticies.Length - 1].Position = new Vector3(loc, 0);
+                x.Verticies[x.Verticies.Length - 1].TextureCoord = loc;
+                x.Verticies[x.Verticies.Length - 1].Color4 = Color.Orange;
+                x.AvailableID[0] = (short)x.Verticies.Length;
+                if(x.AvailableID.Length >1)
+                {
+                    x.RemoveArray(ModelingArrays.AvailableID, 0);
+                }
+                x.EditSelectGroup[0] = x.Verticies.Length - 1;
+            }
         }
+
         public void UnExecute()
         {
-
+            x.Verticies = oldInfo;
+            x.Lines = oldLines;
+            x.Tris = oldTris;
+            x.EditSelectGroup = oldSelect;
+            x.AvailableID = oldID;
         }
     }
-    class ConnectExistingVert : ICommand
-    {
-        public void Execute()
-        {
-
-        }
-        public void UnExecute()
-        {
-
-        }
-    }
+    
 }
+//moving added connected lines to 
 
